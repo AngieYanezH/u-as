@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>Simulador AR - Esmaltado de Uñas</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover" />
+  <!-- A-Frame y AR.js -->
+  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.min.js"></script>
+  <style>
+    html, body { margin:0; height:100%; overflow:hidden; background:#000; }
+    .hud {
+      position: fixed; left: 10px; top: 10px; z-index: 10;
+      background: rgba(20,20,22,.75); color: #fff;
+      padding: 10px 12px; border-radius: 10px; font-family: system-ui, Arial, sans-serif;
+      backdrop-filter: blur(6px);
+    }
+    .hud h3 { margin: 0 0 6px 0; font-size: 14px; font-weight: 700; }
+    .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:8px; }
+    .color-btn{
+      width:26px; height:26px; border-radius:50%; border:2px solid rgba(255,255,255,.6);
+      cursor:pointer; outline:none; padding:0;
+    }
+    .ctl { display:flex; align-items:center; gap:6px; font-size:12px; }
+    .ctl input[type="range"]{ width: 160px; }
+    .select{
+      background: rgba(255,255,255,.1); color:#fff; border:1px solid rgba(255,255,255,.3);
+      border-radius: 8px; padding: 6px 8px; font-size: 12px;
+    }
+    .foot { font-size: 11px; opacity:.9; line-height:1.3; }
+    .kbd{ background:#222; border:1px solid #444; padding:2px 6px; border-radius:6px; font-size:11px; }
+    @media (max-width: 420px){
+      .ctl input[type="range"]{ width:130px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HUD / Controles -->
+  <div class="hud">
+    <h3>Esmaltado AR</h3>
+    <div class="row" id="palette">
+      <!-- Paleta de colores -->
+      <button class="color-btn" style="background:#e91e63" data-color="#e91e63" title="Rosa"></button>
+      <button class="color-btn" style="background:#d32f2f" data-color="#d32f2f" title="Rojo"></button>
+      <button class="color-btn" style="background:#ab47bc" data-color="#ab47bc" title="Lila"></button>
+      <button class="color-btn" style="background:#1976d2" data-color="#1976d2" title="Azul"></button>
+      <button class="color-btn" style="background:#00897b" data-color="#00897b" title="Verde"></button>
+      <button class="color-btn" style="background:#ffb300" data-color="#ffb300" title="Mostaza"></button>
+      <button class="color-btn" style="background:#ffffff" data-color="#ffffff" title="Blanco"></button>
+      <button class="color-btn" style="background:#111111" data-color="#111111" title="Negro"></button>
+      <button class="color-btn" style="background:#c49b6e" data-color="#c49b6e" title="Nude"></button>
+    </div>
+
+    <div class="row">
+      <select id="finish" class="select" title="Acabado">
+        <option value="glossy">Brillante</option>
+        <option value="matte">Mate</option>
+      </select>
+      <button id="reset" class="select" style="cursor:pointer">Reset</button>
+    </div>
+
+    <div class="row ctl">
+      <span>Escala</span>
+      <input id="scale" type="range" min="0.60" max="1.60" step="0.01" value="1.00">
+      <span id="scaleVal">1.00</span>
+    </div>
+    <div class="row ctl">
+      <span>Altura (Y)</span>
+      <input id="posY" type="range" min="-0.10" max="0.20" step="0.005" value="0.00">
+      <span id="posYVal">0.00</span>
+    </div>
+    <div class="row ctl">
+      <span>X (izq/der)</span>
+      <input id="posX" type="range" min="-0.20" max="0.20" step="0.005" value="0.00">
+      <span id="posXVal">0.00</span>
+    </div>
+    <div class="row ctl">
+      <span>Z (adel/atr)</span>
+      <input id="posZ" type="range" min="-0.20" max="0.20" step="0.005" value="0.00">
+      <span id="posZVal">0.00</span>
+    </div>
+
+    <div class="foot">
+      Atajos: <span class="kbd">U/O</span> escala, <span class="kbd">J/L</span> X, <span class="kbd">I/K</span> Z.
+    </div>
+  </div>
+
+  <!-- Escena AR -->
+  <a-scene
+    vr-mode-ui="enabled: false"
+    renderer="antialias: true; alpha: true"
+    embedded
+    arjs="sourceType: webcam; trackingMethod: best; debugUIEnabled: false;"
+  >
+    <a-assets>
+      <!-- Pon tu modelo en ./models/nail.glb -->
+      <a-asset-item id="nailModel" src="./models/nail.glb" response-type="arraybuffer"></a-asset-item>
+    </a-assets>
+
+    <!-- Marcador: imprime el marcador Hiro -->
+    <a-marker preset="hiro">
+      <!-- Grupo “mano”: rota -90 para que las uñas queden planas sobre el marcador -->
+      <a-entity id="hand" position="0 0 0" rotation="-90 0 0" scale="1 1 1">
+
+        <!-- 5 uñas (pulgar a meñique). Ajusta posiciones a tu gusto -->
+        <a-entity class="nail" gltf-model="#nailModel" position="-0.10 0 0.00" nail-painter></a-entity>
+        <a-entity class="nail" gltf-model="#nailModel" position="-0.05 0 0.00" nail-painter></a-entity>
+        <a-entity class="nail" gltf-model="#nailModel" position=" 0.00 0 0.00" nail-painter></a-entity>
+        <a-entity class="nail" gltf-model="#nailModel" position=" 0.05 0 0.00" nail-painter></a-entity>
+        <a-entity class="nail" gltf-model="#nailModel" position=" 0.10 0 0.00" nail-painter></a-entity>
+
+      </a-entity>
+    </a-marker>
+
+    <a-entity camera></a-entity>
+  </a-scene>
+
+  <script>
+    // Estado global sencillo
+    window.__nailColor  = '#e91e63';   // color por defecto
+    window.__nailFinish = 'glossy';    // acabado por defecto
+
+    // Componente: pinta el material cuando el modelo termina de cargar
+    AFRAME.registerComponent('nail-painter', {
+      init: function () {
+        this.el.addEventListener('model-loaded', () => {
+          const obj = this.el.getObject3D('mesh');
+          if (!obj) return;
+          obj.traverse((node) => {
+            if (node.isMesh) {
+              const mat = node.material.clone();
+              mat.color = new THREE.Color(window.__nailColor || '#e91e63');
+              if (window.__nailFinish === 'glossy') {
+                mat.metalness = 0.6; mat.roughness = 0.2;
+              } else {
+                mat.metalness = 0.0; mat.roughness = 0.9;
+              }
+              node.material = mat;
+              node.material.needsUpdate = true;
+            }
+          });
+        });
+      }
+    });
+
+    // Helpers para aplicar cambios a todas las uñas
+    function forEachNail(cb){
+      document.querySelectorAll('.nail').forEach(el => {
+        const obj = el.getObject3D('mesh');
+        if (obj) obj.traverse((n) => { if (n.isMesh && n.material) cb(n.material); });
+      });
+    }
+
+    function paintAll(hex){
+      window.__nailColor = hex;
+      forEachNail((m) => { m.color = new THREE.Color(hex); m.needsUpdate = true; });
+    }
+
+    function setFinish(type){
+      window.__nailFinish = type;
+      if (type === 'glossy'){
+        forEachNail((m)=>{ m.metalness = 0.6; m.roughness = 0.2; m.needsUpdate = true; });
+      } else {
+        forEachNail((m)=>{ m.metalness = 0.0; m.roughness = 0.9; m.needsUpdate = true; });
+      }
+    }
+
+    // UI: paleta de colores
+    document.querySelectorAll('.color-btn').forEach(b=>{
+      b.addEventListener('click', ()=> paintAll(b.dataset.color));
+    });
+
+    // UI: acabado
+    document.getElementById('finish').addEventListener('change', (e)=> setFinish(e.target.value));
+
+    // UI: sliders de mano (grupo #hand)
+    const hand = () => document.getElementById('hand');
+
+    const scale = document.getElementById('scale');
+    const posY  = document.getElementById('posY');
+    const posX  = document.getElementById('posX');
+    const posZ  = document.getElementById('posZ');
+
+    function updateScale(v){
+      const s = parseFloat(v).toFixed(2);
+      document.getElementById('scaleVal').textContent = s;
+      if (hand()) hand().setAttribute('scale', `${s} ${s} ${s}`);
+    }
+    function updatePos(axis, v){
+      const val = parseFloat(v).toFixed(3);
+      document.getElementById('pos'+axis.toUpperCase()+'Val').textContent = val;
+      const p = hand().getAttribute('position');
+      if (!p) return;
+      if (axis==='x') p.x = parseFloat(val);
+      if (axis==='y') p.y = parseFloat(val);
+      if (axis==='z') p.z = parseFloat(val);
+      hand().setAttribute('position', p);
+    }
+
+    scale.addEventListener('input', (e)=> updateScale(e.target.value));
+    posY .addEventListener('input', (e)=> updatePos('y', e.target.value));
+    posX .addEventListener('input', (e)=> updatePos('x', e.target.value));
+    posZ .addEventListener('input', (e)=> updatePos('z', e.target.value));
+
+    // Reset rápido
+    document.getElementById('reset').addEventListener('click', ()=>{
+      scale.value = 1.00; posY.value = 0.00; posX.value = 0.00; posZ.value = 0.00;
+      updateScale(scale.value); updatePos('y', posY.value); updatePos('x', posX.value); updatePos('z', posZ.value);
+      document.getElementById('finish').value = 'glossy';
+      setFinish('glossy');
+      paintAll('#e91e63');
+    });
+
+    // Atajos de teclado: U/O (escala), J/L (X), I/K (Z)
+    window.addEventListener('keydown', (e)=>{
+      const stepPos = 0.005, stepScale = 0.02;
+      if (e.key.toLowerCase() === 'u') { scale.value = Math.max(0.6, parseFloat(scale.value) - stepScale).toFixed(2); updateScale(scale.value); }
+      if (e.key.toLowerCase() === 'o') { scale.value = Math.min(1.6, parseFloat(scale.value) + stepScale).toFixed(2); updateScale(scale.value); }
+      if (e.key.toLowerCase() === 'j') { posX.value = (parseFloat(posX.value) - stepPos).toFixed(3); updatePos('x', posX.value); }
+      if (e.key.toLowerCase() === 'l') { posX.value = (parseFloat(posX.value) + stepPos).toFixed(3); updatePos('x', posX.value); }
+      if (e.key.toLowerCase() === 'i') { posZ.value = (parseFloat(posZ.value) - stepPos).toFixed(3); updatePos('z', posZ.value); }
+      if (e.key.toLowerCase() === 'k') { posZ.value = (parseFloat(posZ.value) + stepPos).toFixed(3); updatePos('z', posZ.value); }
+    });
+
+    // Inicializa valores
+    updateScale(scale.value);
+    updatePos('y', posY.value);
+    updatePos('x', posX.value);
+    updatePos('z', posZ.value);
+  </script>
+</body>
+</html>
