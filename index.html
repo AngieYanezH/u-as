@@ -2,29 +2,25 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8">
-    <title>Modelo 3D en A-Frame</title>
+    <title>Modelo 3D con AR.js</title>
     <script src="https://aframe.io/releases/1.4.1/aframe.min.js"></script>
+    <script src="https://cdn.rawgit.com/jeromeetienne/AR.js/2.2.1/aframe/build/aframe-ar.js"></script>
   </head>
-  <body>
-    <a-scene>
+  <body style="margin: 0; overflow: hidden;">
+    <a-scene embedded arjs>
       <!-- Cámara -->
-      <a-entity position="0 1.6 3">
-        <a-camera></a-camera>
-      </a-entity>
+      <a-marker preset="hiro">
+        <!-- Modelo 3D -->
+        <a-entity gltf-model="https://angieyanezh.github.io/u-as/models/nail.glb"
+                  scale="0.5 0.5 0.5"
+                  position="0 0 0"
+                  rotation="0 180 0"
+                  animation="property: rotation; to: 0 360 0; loop: true; dur: 6000; easing: linear">
+        </a-entity>
+      </a-marker>
 
-      <!-- Luces -->
-      <a-entity light="type: ambient; intensity: 0.8"></a-entity>
-      <a-entity light="type: directional; intensity: 0.6" position="1 1 1"></a-entity>
-
-      <!-- Modelo 3D -->
-      <a-entity gltf-model="https://angieyanezh.github.io/u-as/models/nail.glb"
-                scale="0.5 0.5 0.5"
-                position="0 0 -2"
-                rotation="0 180 0">
-      </a-entity>
-
-      <!-- Suelo -->
-      <a-plane rotation="-90 0 0" width="10" height="10" color="#ccc"></a-plane>
+      <!-- Cámara de AR -->
+      <a-entity camera></a-entity>
     </a-scene>
   </body>
 </html>
