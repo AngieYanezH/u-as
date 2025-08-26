@@ -1,20 +1,181 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <title>AR.js Test Fixed</title>
-    <script src="https://aframe.io/releases/1.4.1/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/ar.js@3.4.4/aframe/build/aframe-ar.js"></script>
-  </head>
-  <body style="margin:0; overflow:hidden;">
-    <a-scene embedded arjs>
-      <a-marker preset="hiro">
-        <a-entity gltf-model="https://cdn.aframe.io/test-models/models/RobotExpressive/RobotExpressive.glb"
-                  scale="0.3 0.3 0.3"
-                  position="0 0 0">
-        </a-entity>
-      </a-marker>
-      <a-entity camera></a-entity>
-    </a-scene>
-  </body>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>Simulador AR - Esmaltado de Uñas</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover" />
+  <!-- A-Frame y AR.js -->
+  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.min.js"></script>
+  <style>
+    html, body { margin:0; height:100%; overflow:hidden; background:#b59696; }
+    #startBtn {
+      position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      padding: 14px 20px; font-size: 16px; background:#1976d2; color:white;
+      border:none; border-radius:10px; cursor:pointer; z-index:999;
+    }
+    .hud {
+      position: fixed; left: 10px; top: 10px; z-index: 10;
+      background: rgba(20,20,22,.75); color: #fff;
+      padding: 10px 12px; border-radius: 10px; font-family: system-ui, Arial, sans-serif;
+      backdrop-filter: blur(6px);
+      display:none; /* oculto hasta que se inicie */
+    }
+    .hud h3 { margin: 0 0 6px 0; font-size: 14px; font-weight: 700; }
+    .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:8px; }
+    .color-btn{
+      width:26px; height:26px; border-radius:50%; border:2px solid rgba(255,255,255,.6);
+      cursor:pointer; outline:none; padding:0;
+    }
+    .ctl { display:flex; align-items:center; gap:6px; font-size:12px; }
+    .ctl input[type="range"]{ width: 160px; }
+    .select{
+      background: rgba(255,255,255,.1); color:#fff; border:1px solid rgba(255,255,255,.3);
+      border-radius: 8px; padding: 6px 8px; font-size: 12px;
+    }
+    .foot { font-size: 11px; opacity:.9; line-height:1.3; }
+    .kbd{ background:#222; border:1px solid #444; padding:2px 6px; border-radius:6px; font-size:11px; }
+  </style>
+</head>
+<body>
+
+  <!-- Botón para iniciar cámara -->
+  <button id="startBtn">🎥 Iniciar cámara</button>
+
+  <!-- HUD / Controles -->
+  <div class="hud" id="hud">
+    <h3>Esmaltado AR</h3>
+    <div class="row" id="palette">
+      <button class="color-btn" style="background:#e91e63" data-color="#e91e63"></button>
+      <button class="color-btn" style="background:#d32f2f" data-color="#d32f2f"></button>
+      <button class="color-btn" style="background:#ab47bc" data-color="#ab47bc"></button>
+      <button class="color-btn" style="background:#1976d2" data-color="#1976d2"></button>
+      <button class="color-btn" style="background:#00897b" data-color="#00897b"></button>
+      <button class="color-btn" style="background:#ffb300" data-color="#ffb300"></button>
+      <button class="color-btn" style="background:#ffffff" data-color="#ffffff"></button>
+      <button class="color-btn" style="background:#111111" data-color="#111111"></button>
+      <button class="color-btn" style="background:#c49b6e" data-color="#c49b6e"></button>
+    </div>
+
+    <div class="row">
+      <select id="finish" class="select">
+        <option value="glossy">Brillante</option>
+        <option value="matte">Mate</option>
+      </select>
+      <button id="reset" class="select" style="cursor:pointer">Reset</button>
+    </div>
+
+    <div class="row ctl">
+      <span>Escala</span>
+      <input id="scale" type="range" min="0.60" max="1.60" step="0.01" value="1.00">
+      <span id="scaleVal">1.00</span>
+    </div>
+    <div class="row ctl">
+      <span>Altura (Y)</span>
+      <input id="posY" type="range" min="-0.10" max="0.20" step="0.005" value="0.00">
+      <span id="posYVal">0.00</span>
+    </div>
+    <div class="row ctl">
+      <span>X (izq/der)</span>
+      <input id="posX" type="range" min="-0.20" max="0.20" step="0.005" value="0.00">
+      <span id="posXVal">0.00</span>
+    </div>
+    <div class="row ctl">
+      <span>Z (adel/atr)</span>
+      <input id="posZ" type="range" min="-0.20" max="0.20" step="0.005" value="0.00">
+      <span id="posZVal">0.00</span>
+    </div>
+
+    <div class="foot">
+      Atajos: <span class="kbd">U/O</span> escala, <span class="kbd">J/L</span> X, <span class="kbd">I/K</span> Z.
+    </div>
+  </div>
+
+  <!-- Escena AR (oculta hasta iniciar) -->
+  <a-scene id="scene"
+    vr-mode-ui="enabled: false"
+    renderer="antialias: true; alpha: true"
+    embedded
+    arjs="sourceType: webcam; facingMode: environment; debugUIEnabled: false;"
+    style="display:none;"
+  >
+    <a-assets>
+      <a-asset-item id="nailModel" src="./models/nail.glb"></a-asset-item>
+    </a-assets>
+
+    <a-marker preset="hiro">
+      <a-entity id="hand" position="0 0 0" rotation="-90 0 0" scale="1 1 1">
+        <a-entity class="nail" gltf-model="#nailModel" position="-0.10 0 0.00" nail-painter></a-entity>
+        <a-entity class="nail" gltf-model="#nailModel" position="-0.05 0 0.00" nail-painter></a-entity>
+        <a-entity class="nail" gltf-model="#nailModel" position="0.00 0 0.00" nail-painter></a-entity>
+        <a-entity class="nail" gltf-model="#nailModel" position="0.05 0 0.00" nail-painter></a-entity>
+        <a-entity class="nail" gltf-model="#nailModel" position="0.10 0 0.00" nail-painter></a-entity>
+      </a-entity>
+    </a-marker>
+
+    <a-entity camera></a-entity>
+  </a-scene>
+
+  <script>
+    // Estado
+    window.__nailColor = '#e91e63';
+    window.__nailFinish = 'glossy';
+
+    // Componente
+    AFRAME.registerComponent('nail-painter', {
+      init: function () {
+        this.el.addEventListener('model-loaded', () => {
+          const obj = this.el.getObject3D('mesh');
+          if (!obj) return;
+          obj.traverse((node) => {
+            if (node.isMesh) {
+              const mat = node.material.clone();
+              mat.color = new THREE.Color(window.__nailColor);
+              if (window.__nailFinish === 'glossy') {
+                mat.metalness = 0.6; mat.roughness = 0.2;
+              } else {
+                mat.metalness = 0.0; mat.roughness = 0.9;
+              }
+              node.material = mat;
+              node.material.needsUpdate = true;
+            }
+          });
+        });
+      }
+    });
+
+    // Helpers
+    function forEachNail(cb){
+      document.querySelectorAll('.nail').forEach(el => {
+        const obj = el.getObject3D('mesh');
+        if (obj) obj.traverse((n)=>{ if(n.isMesh && n.material) cb(n.material); });
+      });
+    }
+    function paintAll(hex){
+      window.__nailColor = hex;
+      forEachNail((m)=>{ m.color = new THREE.Color(hex); m.needsUpdate = true; });
+    }
+    function setFinish(type){
+      window.__nailFinish = type;
+      if (type==='glossy'){
+        forEachNail((m)=>{ m.metalness=0.6; m.roughness=0.2; m.needsUpdate=true; });
+      } else {
+        forEachNail((m)=>{ m.metalness=0.0; m.roughness=0.9; m.needsUpdate=true; });
+      }
+    }
+
+    // Botón iniciar
+    document.getElementById('startBtn').addEventListener('click', ()=>{
+      document.getElementById('scene').style.display = 'block';
+      document.getElementById('hud').style.display = 'block';
+      document.getElementById('startBtn').style.display = 'none';
+    });
+
+    // UI
+    document.querySelectorAll('.color-btn').forEach(b=>{
+      b.addEventListener('click', ()=> paintAll(b.dataset.color));
+    });
+    document.getElementById('finish').addEventListener('change', (e)=> setFinish(e.target.value));
+  </script>
+</body>
 </html>
